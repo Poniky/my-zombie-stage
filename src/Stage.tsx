@@ -220,14 +220,41 @@ function ZombieUI({ stage }: { stage: Stage }) {
 
   return (
     <div style={{
-      width: '100vw', height: '100vh', padding: '15px', background: '#000000',
-      color: '#ffffff', fontFamily: 'monospace', overflowY: 'auto',
-      boxSizing: 'border-box', position: 'fixed', top: 0, left: 0, zIndex: 9999
+      width: '100vw',
+      minHeight: '100vh',
+      padding: '15px',
+      paddingBottom: '30px',
+      background: '#000000',
+      color: '#ffffff',
+      fontFamily: 'monospace',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      boxSizing: 'border-box',
+      position: 'relative',
+      zIndex: 9999
     }}>
       <style>{`
-        html, body, #root { background: #000000 !important; margin: 0 !important; padding: 0 !important; min-height: 100vh !important; }
+        html, body, #root { 
+          background: #000000 !important; 
+          margin: 0 !important; 
+          padding: 0 !important; 
+          min-height: 100vh !important;
+          overflow-y: auto !important;
+        }
         button:hover { opacity: 0.8; }
-        .hover-tooltip { position: fixed; background: #1a1a1a; border: 1px solid #ffd93d; padding: 8px 12px; border-radius: 5px; color: #ffffff; font-size: 12px; max-width: 300px; z-index: 10000; pointer-events: none; box-shadow: 0 0 20px rgba(255,217,61,0.2); }
+        .hover-tooltip { 
+          position: fixed; 
+          background: #1a1a1a; 
+          border: 1px solid #ffd93d; 
+          padding: 8px 12px; 
+          border-radius: 5px; 
+          color: #ffffff; 
+          font-size: 12px; 
+          max-width: 300px; 
+          z-index: 10000; 
+          pointer-events: none; 
+          box-shadow: 0 0 20px rgba(255,217,61,0.2); 
+        }
       `}</style>
 
       {hoverInfo && (
@@ -268,16 +295,14 @@ function ZombieUI({ stage }: { stage: Stage }) {
         ))}
       </div>
 
-      {/* Body Tab - Made Scrollable */}
+      {/* Body Tab */}
       {activeTab === 'body' && (
         <div style={{
           background: '#111111',
           padding: '15px',
           borderRadius: '10px',
           border: '1px solid #333333',
-          marginBottom: '15px',
-          maxHeight: '400px',
-          overflowY: 'auto'
+          marginBottom: '15px'
         }}>
           <h3 style={{ margin: '0 0 10px 0', color: '#ffd93d' }}>
             🧬 Body Mods ({state.bodyParts.filter((p: BodyPart) => p.equipped).length}/10)
@@ -414,17 +439,14 @@ function ZombieUI({ stage }: { stage: Stage }) {
         {showInventory ? '📦 Hide Inventory' : '📦 Show Inventory'} ({state.inventory.length})
       </button>
 
-      {/* Inventory - Made Scrollable with Sell Buttons */}
+      {/* Inventory */}
       {showInventory && (
         <div style={{
           background: '#111111',
           padding: '15px',
           borderRadius: '10px',
           marginBottom: '15px',
-          border: '1px solid #333333',
-          maxHeight: '300px',
-          overflowY: 'auto',
-          overflowX: 'hidden'
+          border: '1px solid #333333'
         }}>
           <h3 style={{ margin: '0 0 10px 0', color: '#ffd93d' }}>📦 Inventory</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
@@ -473,7 +495,7 @@ function ZombieUI({ stage }: { stage: Stage }) {
                       {isCursed ? '⚠️ Equip' : 'Equip'}
                     </button>
                   )}
-                  {/* 👇 SELL BUTTON - Only for non-equipped, non-cursed, non-potion items */}
+                  {/* Sell Button */}
                   {!['Health Potion', 'Stamina Potion'].includes(item) && !isEquipped && !isCursed && (
                     <button onClick={() => handleSellItem(item)} style={{
                       background: '#ff8a5c',
