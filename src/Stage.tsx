@@ -909,7 +909,11 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
       chatState: null 
     };
   }
-
+  // Add this method to your Stage class
+  checkPromptInjection(): void {
+    console.log('[Zombie Stage] Current instructions being sent to AI:');
+    console.log(this.myInternalState);
+  }
   render(): ReactElement {
     return <ZombieUI stage={this} />;
   }
