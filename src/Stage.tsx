@@ -167,6 +167,12 @@ function ZombieUI({ stage }: { stage: Stage }) {
     updateUI();
   };
 
+  const handleSellItem = (itemName: string) => {
+    const result = stage.sellItem(itemName);
+    setMessage(result.message);
+    updateUI();
+  };
+
   const handleMouseEnter = (text: string, e: React.MouseEvent) => {
     setHoverInfo({ text, x: e.clientX + 10, y: e.clientY + 10 });
   };
@@ -262,9 +268,17 @@ function ZombieUI({ stage }: { stage: Stage }) {
         ))}
       </div>
 
-      {/* Body Tab */}
+      {/* Body Tab - Made Scrollable */}
       {activeTab === 'body' && (
-        <div style={{ background: '#111111', padding: '15px', borderRadius: '10px', border: '1px solid #333333', marginBottom: '15px' }}>
+        <div style={{
+          background: '#111111',
+          padding: '15px',
+          borderRadius: '10px',
+          border: '1px solid #333333',
+          marginBottom: '15px',
+          maxHeight: '400px',
+          overflowY: 'auto'
+        }}>
           <h3 style={{ margin: '0 0 10px 0', color: '#ffd93d' }}>
             🧬 Body Mods ({state.bodyParts.filter((p: BodyPart) => p.equipped).length}/10)
             {state.cursedRemoved && <span style={{ fontSize: '12px', color: '#6bcbff', marginLeft: '10px' }}>🔓 Curse removal unlocked!</span>}
@@ -400,19 +414,44 @@ function ZombieUI({ stage }: { stage: Stage }) {
         {showInventory ? '📦 Hide Inventory' : '📦 Show Inventory'} ({state.inventory.length})
       </button>
 
+      {/* Inventory - Made Scrollable with Sell Buttons */}
       {showInventory && (
-        <div style={{ background: '#111111', padding: '15px', borderRadius: '10px', marginBottom: '15px', border: '1px solid #333333' }}>
+        <div style={{
+          background: '#111111',
+          padding: '15px',
+          borderRadius: '10px',
+          marginBottom: '15px',
+          border: '1px solid #333333',
+          maxHeight: '300px',
+          overflowY: 'auto',
+          overflowX: 'hidden'
+        }}>
           <h3 style={{ margin: '0 0 10px 0', color: '#ffd93d' }}>📦 Inventory</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
             {state.inventory.map((item: string, index: number) => {
               const isCursed = item.includes('Cursed');
+              const isEquipped = state.equipment.weapon === item ||
+                                state.equipment.armor === item ||
+                                state.equipment.accessory === item;
               const statBonus = stage.itemStats[item] || 0;
               return (
-                <div key={index} style={{ background: isCursed ? '#2a0a0a' : '#1a1a1a', padding: '8px 15px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '8px', border: isCursed ? '2px solid #ff0000' : '1px solid #333333' }}
-                  onMouseEnter={(e) => handleMouseEnter(`${isCursed ? '⚠️ CURSED ⚠️ ' : ''}${item}: ${getItemDescription(item)}`, e)}
+                <div key={index} style={{
+                  background: isCursed ? '#2a0a0a' : (isEquipped ? '#1a2a1a' : '#1a1a1a'),
+                  padding: '8px 15px',
+                  borderRadius: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  border: isCursed ? '2px solid #ff0000' : (isEquipped ? '1px solid #6bcbff' : '1px solid #333333')
+                }}
+                  onMouseEnter={(e) => handleMouseEnter(
+                    `${isCursed ? '⚠️ CURSED ⚠️ ' : ''}${item}: ${getItemDescription(item)}${isEquipped ? ' (Equipped)' : ''}`,
+                    e
+                  )}
                   onMouseLeave={handleMouseLeave}>
-                  <span style={{ color: isCursed ? '#ff6b6b' : '#ffffff' }}>
+                  <span style={{ color: isCursed ? '#ff6b6b' : (isEquipped ? '#6bcbff' : '#ffffff') }}>
                     {isCursed ? '⚠️ ' : ''}{item}
+                    {isEquipped && <span style={{ fontSize: '10px', color: '#6bcbff' }}> ⚔️</span>}
                     {statBonus > 0 && <span style={{ fontSize: '10px', color: '#ffd93d' }}> (+{statBonus})</span>}
                   </span>
                   {item === 'Health Potion' && (
@@ -421,9 +460,31 @@ function ZombieUI({ stage }: { stage: Stage }) {
                   {item === 'Stamina Potion' && (
                     <button onClick={handleUseStaminaPotion} style={{ background: '#6bcbff', color: '#ffffff', border: 'none', borderRadius: '3px', cursor: 'pointer', padding: '2px 8px', fontWeight: 'bold' }}>Use</button>
                   )}
-                  {!['Health Potion', 'Stamina Potion'].includes(item) && (
-                    <button onClick={() => handleEquipFromInventory(item)} style={{ background: isCursed ? '#ff6b6b' : '#ffd93d', color: '#ffffff', border: 'none', borderRadius: '3px', cursor: 'pointer', padding: '2px 8px', fontWeight: 'bold' }}>
+                  {!['Health Potion', 'Stamina Potion'].includes(item) && !isEquipped && (
+                    <button onClick={() => handleEquipFromInventory(item)} style={{
+                      background: isCursed ? '#ff6b6b' : '#ffd93d',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '3px',
+                      cursor: 'pointer',
+                      padding: '2px 8px',
+                      fontWeight: 'bold'
+                    }}>
                       {isCursed ? '⚠️ Equip' : 'Equip'}
+                    </button>
+                  )}
+                  {/* 👇 SELL BUTTON - Only for non-equipped, non-cursed, non-potion items */}
+                  {!['Health Potion', 'Stamina Potion'].includes(item) && !isEquipped && !isCursed && (
+                    <button onClick={() => handleSellItem(item)} style={{
+                      background: '#ff8a5c',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '3px',
+                      cursor: 'pointer',
+                      padding: '2px 8px',
+                      fontWeight: 'bold'
+                    }}>
+                      💰 Sell
                     </button>
                   )}
                 </div>
@@ -501,9 +562,6 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
     this.generateShopItems();
   }
 
-  // async load(): Promise<Partial<LoadResponse<InitStateType, ChatStateType, MessageStateType>>> {
-  //   return { success: true, error: null, initState: null, chatState: null };
-  // }
   async load(): Promise<Partial<LoadResponse<InitStateType, ChatStateType, MessageStateType>>> {
     return {
       success: true,
@@ -511,7 +569,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
       initState: null,
       chatState: null,
     };
-}
+  }
+
   async setState(state: MessageStateType): Promise<void> {
     if (state != null) this.myInternalState = { ...this.myInternalState, ...state } as MessageStateType & { [key: string]: any };
   }
@@ -679,6 +738,35 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
   }
 
   addGold(amount: number) { this.myInternalState.gold += amount; }
+
+  sellItem(itemName: string) {
+    const invIndex = this.myInternalState.inventory.indexOf(itemName);
+    if (invIndex === -1) {
+      return { success: false, message: `${itemName} not in inventory!` };
+    }
+    
+    if (itemName.includes('Cursed')) {
+      return { success: false, message: 'Cannot sell cursed items!' };
+    }
+    
+    if (this.myInternalState.equipment.weapon === itemName ||
+        this.myInternalState.equipment.armor === itemName ||
+        this.myInternalState.equipment.accessory === itemName) {
+      return { success: false, message: 'Cannot sell equipped items! Unequip first.' };
+    }
+    
+    if (itemName === 'Health Potion' || itemName === 'Stamina Potion') {
+      return { success: false, message: 'Cannot sell potions!' };
+    }
+    
+    const statBonus = this.itemStats[itemName] || 2;
+    const sellPrice = Math.max(5, Math.floor((10 + statBonus * 3) / 2));
+    
+    this.myInternalState.inventory.splice(invIndex, 1);
+    this.myInternalState.gold += sellPrice;
+    
+    return { success: true, message: `Sold ${itemName} for ${sellPrice} gold!` };
+  }
 
   takeDamage(amount: number) {
     const actualDamage = Math.max(1, amount - Math.floor((this.myInternalState.stats.defense || 1) / 2));
