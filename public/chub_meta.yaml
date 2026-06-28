@@ -63,3 +63,8 @@ state_schema:
 
 # extension_id is automatically generated - DO NOT SET
 # github_path will be added automatically
+github_path: 'https://github.com/Poniky/my-zombie-stage'
+
+
+extension_id: 'my-zombie-stage-c2c253be32ed'
+
