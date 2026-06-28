@@ -116,9 +116,9 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
       expToNext: 50,
       bodyParts: bodyParts,
       equipment: {
-        weapon: 'Squeaky Clown Hammer',
-        armor: 'Jester\'s Tattered Vest',
-        accessory: 'Shiny Red Nose',
+        weapon: 'Duo Dagger of Clownishness',
+        armor: 'Harlequin shiny long cloak',
+        accessory: 'Black half face mask',
         weaponStat: 4,
         armorStat: 3,
         accessoryStat: 2
@@ -171,11 +171,11 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
     this.itemStats['Bat Wings (Leathery)'] = 3;
     this.itemStats['Tail (Prehensile)'] = 2;
     this.itemStats['Cursed Rotten Right Arm (Cursed)'] = 8;
-    this.itemStats['Squeaky Clown Hammer'] = 4;
+    this.itemStats['Duo Dagger of Clownishness'] = 4;
     this.itemStats['Clown Nose Dagger'] = 3;
-    this.itemStats['Jester\'s Tattered Vest'] = 3;
+    this.itemStats['Harlequin shiny long cloak'] = 5;
     this.itemStats['Polka Dot Plate Armor'] = 4;
-    this.itemStats['Shiny Red Nose'] = 2;
+    this.itemStats['Black half face mask'] = 2;
   }
 
   assignEquipmentStats() {
