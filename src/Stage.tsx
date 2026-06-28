@@ -14,14 +14,14 @@ type BodyPart = {
   slot: 'head' | 'neck' | 'rightArm' | 'leftArm' | 'torso' | 'crotch' | 'leftLeg' | 'rightLeg' | 'tail' | 'wings';
   isCursed: boolean;
   description: string;
-  statBonus: number; // Store the exact bonus this part gives
+  statBonus: number;
 };
 
 type Equipment = {
   weapon: string | null;
   armor: string | null;
   accessory: string | null;
-  weaponStat: number; // Store exact stat bonus
+  weaponStat: number;
   armorStat: number;
   accessoryStat: number;
 };
@@ -53,7 +53,6 @@ type MessageStateType = {
     defense: number;
   };
   cursedRemoved: boolean;
-  // Owner tracking
   owner: {
     name: string;
     mood: string;
@@ -77,7 +76,7 @@ type ChatStateType = any;
 
 export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateType, ConfigType> {
 
-  myInternalState: { [key: string]: any; };
+  myInternalState: MessageStateType & { [key: string]: any };
   shopItems: ShopItem[] = [];
   itemStats: { [key: string]: number } = {};
   tooltipInfo: { text: string; x: number; y: number } | null = null;
@@ -152,7 +151,6 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
     this.generateShopItems();
   }
 
-  // ✅ CRITICAL: load() method MUST be here
   async load(): Promise<Partial<LoadResponse<InitStateType, ChatStateType, MessageStateType>>> {
     return {
       success: true,
@@ -164,7 +162,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
 
   async setState(state: MessageStateType): Promise<void> {
     if (state != null) {
-      this.myInternalState = {...this.myInternalState, ...state};
+      this.myInternalState = {...this.myInternalState, ...state} as MessageStateType & { [key: string]: any };
     }
   }
 
@@ -178,7 +176,6 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
     this.itemStats['Jester\'s Tattered Vest'] = 3;
     this.itemStats['Polka Dot Plate Armor'] = 4;
     this.itemStats['Shiny Red Nose'] = 2;
-    // Add more as needed
   }
 
   assignEquipmentStats() {
@@ -187,10 +184,6 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
     eq.armorStat = eq.armor ? (this.itemStats[eq.armor] || 2) : 0;
     eq.accessoryStat = eq.accessory ? (this.itemStats[eq.accessory] || 2) : 0;
   }
-
-  // ============================================
-  // SHOP SYSTEM
-  // ============================================
 
   generateShopItems() {
     const level = this.myInternalState.level || 1;
@@ -268,10 +261,6 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
     this.shopItems = newItems;
   }
 
-  // ============================================
-  // BODY MOD SYSTEM
-  // ============================================
-
   getBodyPartTotalStat(): number {
     let total = 0;
     for (const part of this.myInternalState.bodyParts) {
@@ -282,7 +271,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
 
   equipBodyPartFromInventory(slot: string, itemName: string) {
     const parts = this.myInternalState.bodyParts;
-    const partIndex = parts.findIndex(p => p.slot === slot);
+    const partIndex = parts.findIndex((p: BodyPart) => p.slot === slot);
     if (partIndex === -1) return { success: false, message: 'Invalid body slot' };
     
     const invIndex = this.myInternalState.inventory.indexOf(itemName);
@@ -291,7 +280,6 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
     const isCursed = itemName.includes('Cursed');
     const statBonus = this.itemStats[itemName] || 2;
     
-    // If slot already has something, remove it first
     if (parts[partIndex].equipped) {
       this.myInternalState.inventory.push(parts[partIndex].equipped!);
     }
@@ -312,7 +300,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
 
   removeBodyPart(slot: string) {
     const parts = this.myInternalState.bodyParts;
-    const partIndex = parts.findIndex(p => p.slot === slot);
+    const partIndex = parts.findIndex((p: BodyPart) => p.slot === slot);
     if (partIndex === -1) return { success: false, message: 'Invalid body slot' };
     
     const part = parts[partIndex];
@@ -358,10 +346,6 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
       defense: baseDefense + Math.floor(bodyBonus * 0.2) + armorBonus + accessoryBonus
     };
   }
-
-  // ============================================
-  // EQUIPMENT SYSTEM
-  // ============================================
 
   equipWeapon(itemName: string) {
     const invIndex = this.myInternalState.inventory.indexOf(itemName);
@@ -414,10 +398,6 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
     return true;
   }
 
-  // ============================================
-  // LEVEL SYSTEM
-  // ============================================
-
   addExp(amount: number) {
     this.myInternalState.exp += amount;
     while (this.myInternalState.exp >= this.myInternalState.expToNext && this.myInternalState.level < 50) {
@@ -433,10 +413,6 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
       this.generateShopItems();
     }
   }
-
-  // ============================================
-  // GAME ACTIONS
-  // ============================================
 
   addItem(itemName: string) {
     const inv = this.myInternalState.inventory || [];
@@ -492,10 +468,6 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
     return actualDamage;
   }
 
-  // ============================================
-  // OWNER MANAGEMENT
-  // ============================================
-
   updateOwner(name: string, mood: string, relationship: string, description: string) {
     this.myInternalState.owner = {
       name: name,
@@ -504,10 +476,6 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
       description: description
     };
   }
-
-  // ============================================
-  // HOOKS - Chat integration
-  // ============================================
 
   async beforePrompt(userMessage: Message): Promise<Partial<StageResponse<ChatStateType, MessageStateType>>> {
     const stats = this.myInternalState;
@@ -574,9 +542,7 @@ Owner Description: ${stats.owner.description}
       this.unlockCursedRemoval();
     }
     
-    // Owner updates via AI
     if (content.includes('owner:') || content.includes('master:')) {
-      // Simple parsing - can be expanded
       const lines = content.split('\n');
       for (const line of lines) {
         if (line.includes('owner:') || line.includes('master:')) {
@@ -599,10 +565,6 @@ Owner Description: ${stats.owner.description}
       chatState: null
     };
   }
-
-  // ============================================
-  // RENDER - The UI
-  // ============================================
 
   render(): ReactElement {
     const [activeTab, setActiveTab] = useState<'body' | 'equipment' | 'shop' | 'owner'>('body');
@@ -658,7 +620,7 @@ Owner Description: ${stats.owner.description}
       const lowerName = itemName.toLowerCase();
       
       const bodyPartTypes = ['human head', 'bat wings', 'tail', 'right arm', 'left arm', 'torso', 'neck', 'head', 'leg'];
-      if (bodyPartTypes.some(part => lowerName.includes(part))) {
+      if (bodyPartTypes.some((part: string) => lowerName.includes(part))) {
         let slot: string = '';
         if (lowerName.includes('human head') || lowerName.includes('head')) slot = 'head';
         else if (lowerName.includes('neck')) slot = 'neck';
@@ -681,7 +643,7 @@ Owner Description: ${stats.owner.description}
       
       const weaponKeywords = ['sword', 'axe', 'mace', 'staff', 'dagger', 'spear', 'bow', 'claw', 'whip', 'flail', 'hammer', 'club', 'cannon', 'chicken'];
       let success = false;
-      if (weaponKeywords.some(kw => lowerName.includes(kw))) {
+      if (weaponKeywords.some((kw: string) => lowerName.includes(kw))) {
         success = this.equipWeapon(itemName);
         if (success) setMessage(`Equipped ${itemName} as weapon! (+${this.itemStats[itemName] || 2} strength)`);
       }
@@ -779,7 +741,6 @@ Owner Description: ${stats.owner.description}
           </div>
         )}
         
-        {/* HEADER */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
           <h1 style={{ color: '#ff6b6b', margin: 0 }}>🧟 Zombie Mod</h1>
           <div style={{ display: 'flex', gap: '15px', fontSize: '14px', color: '#aaaaaa' }}>
@@ -790,7 +751,6 @@ Owner Description: ${stats.owner.description}
           </div>
         </div>
         
-        {/* EXP BAR */}
         <div style={{
           width: '100%',
           height: '20px',
@@ -820,9 +780,8 @@ Owner Description: ${stats.owner.description}
           </span>
         </div>
         
-        {/* TABS */}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-          {['body', 'equipment', 'shop', 'owner'].map((tab) => (
+          {['body', 'equipment', 'shop', 'owner'].map((tab: string) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
@@ -844,7 +803,6 @@ Owner Description: ${stats.owner.description}
           ))}
         </div>
         
-        {/* BODY MODS TAB */}
         {activeTab === 'body' && (
           <div style={{
             background: '#111111',
@@ -854,13 +812,12 @@ Owner Description: ${stats.owner.description}
             marginBottom: '15px'
           }}>
             <h3 style={{ margin: '0 0 10px 0', color: '#ffd93d' }}>
-              🧬 Body Mods ({state.bodyParts.filter(p => p.equipped).length}/10)
+              🧬 Body Mods ({state.bodyParts.filter((p: BodyPart) => p.equipped).length}/10)
               {state.cursedRemoved && <span style={{ fontSize: '12px', color: '#6bcbff', marginLeft: '10px' }}>🔓 Curse removal unlocked!</span>}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
-              {/* Head */}
               <div style={{ width: '100%', maxWidth: '300px' }}>
-                {state.bodyParts.filter(p => p.slot === 'head').map((part) => (
+                {state.bodyParts.filter((p: BodyPart) => p.slot === 'head').map((part: BodyPart) => (
                   <div 
                     key={part.slot} 
                     style={{ 
@@ -887,9 +844,8 @@ Owner Description: ${stats.owner.description}
                 ))}
               </div>
               
-              {/* Neck */}
               <div style={{ width: '100%', maxWidth: '200px' }}>
-                {state.bodyParts.filter(p => p.slot === 'neck').map((part) => (
+                {state.bodyParts.filter((p: BodyPart) => p.slot === 'neck').map((part: BodyPart) => (
                   <div 
                     key={part.slot} 
                     style={{ 
@@ -916,9 +872,8 @@ Owner Description: ${stats.owner.description}
                 ))}
               </div>
               
-              {/* Right Arm - Torso - Left Arm */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: '8px', width: '100%', maxWidth: '600px' }}>
-                {state.bodyParts.filter(p => p.slot === 'rightArm').map((part) => (
+                {state.bodyParts.filter((p: BodyPart) => p.slot === 'rightArm').map((part: BodyPart) => (
                   <div 
                     key={part.slot} 
                     style={{ 
@@ -943,7 +898,7 @@ Owner Description: ${stats.owner.description}
                     </div>
                   </div>
                 ))}
-                {state.bodyParts.filter(p => p.slot === 'torso').map((part) => (
+                {state.bodyParts.filter((p: BodyPart) => p.slot === 'torso').map((part: BodyPart) => (
                   <div 
                     key={part.slot} 
                     style={{ 
@@ -968,7 +923,7 @@ Owner Description: ${stats.owner.description}
                     {part.isCursed && <span style={{ marginLeft: '10px', fontSize: '10px', color: '#ff0000' }}>🔒 CURSED</span>}
                   </div>
                 ))}
-                {state.bodyParts.filter(p => p.slot === 'leftArm').map((part) => (
+                {state.bodyParts.filter((p: BodyPart) => p.slot === 'leftArm').map((part: BodyPart) => (
                   <div 
                     key={part.slot} 
                     style={{ 
@@ -995,9 +950,8 @@ Owner Description: ${stats.owner.description}
                 ))}
               </div>
               
-              {/* Crotch */}
               <div style={{ width: '100%', maxWidth: '300px' }}>
-                {state.bodyParts.filter(p => p.slot === 'crotch').map((part) => (
+                {state.bodyParts.filter((p: BodyPart) => p.slot === 'crotch').map((part: BodyPart) => (
                   <div 
                     key={part.slot} 
                     style={{ 
@@ -1024,9 +978,8 @@ Owner Description: ${stats.owner.description}
                 ))}
               </div>
               
-              {/* Left Leg - Right Leg */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', width: '100%', maxWidth: '400px' }}>
-                {state.bodyParts.filter(p => p.slot === 'leftLeg').map((part) => (
+                {state.bodyParts.filter((p: BodyPart) => p.slot === 'leftLeg').map((part: BodyPart) => (
                   <div 
                     key={part.slot} 
                     style={{ 
@@ -1051,7 +1004,7 @@ Owner Description: ${stats.owner.description}
                     </div>
                   </div>
                 ))}
-                {state.bodyParts.filter(p => p.slot === 'rightLeg').map((part) => (
+                {state.bodyParts.filter((p: BodyPart) => p.slot === 'rightLeg').map((part: BodyPart) => (
                   <div 
                     key={part.slot} 
                     style={{ 
@@ -1078,9 +1031,8 @@ Owner Description: ${stats.owner.description}
                 ))}
               </div>
               
-              {/* Tail - Wings */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', width: '100%', maxWidth: '400px' }}>
-                {state.bodyParts.filter(p => p.slot === 'tail').map((part) => (
+                {state.bodyParts.filter((p: BodyPart) => p.slot === 'tail').map((part: BodyPart) => (
                   <div 
                     key={part.slot} 
                     style={{ 
@@ -1105,7 +1057,7 @@ Owner Description: ${stats.owner.description}
                     {part.isCursed && <span style={{ marginLeft: '10px', fontSize: '10px', color: '#ff0000' }}>🔒 CURSED</span>}
                   </div>
                 ))}
-                {state.bodyParts.filter(p => p.slot === 'wings').map((part) => (
+                {state.bodyParts.filter((p: BodyPart) => p.slot === 'wings').map((part: BodyPart) => (
                   <div 
                     key={part.slot} 
                     style={{ 
@@ -1141,7 +1093,6 @@ Owner Description: ${stats.owner.description}
           </div>
         )}
         
-        {/* EQUIPMENT TAB */}
         {activeTab === 'equipment' && (
           <div style={{
             background: '#111111',
@@ -1209,7 +1160,6 @@ Owner Description: ${stats.owner.description}
           </div>
         )}
         
-        {/* SHOP TAB */}
         {activeTab === 'shop' && (
           <div style={{
             background: '#111111',
@@ -1248,7 +1198,7 @@ Owner Description: ${stats.owner.description}
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '10px' }}>
-                {this.shopItems.map((item) => (
+                {this.shopItems.map((item: ShopItem) => (
                   <div 
                     key={item.id} 
                     style={{
@@ -1295,7 +1245,6 @@ Owner Description: ${stats.owner.description}
           </div>
         )}
         
-        {/* OWNER TAB */}
         {activeTab === 'owner' && (
           <div style={{
             background: '#111111',
@@ -1389,7 +1338,6 @@ Owner Description: ${stats.owner.description}
           </div>
         )}
         
-        {/* INVENTORY TOGGLE */}
         <button
           onClick={() => setShowInventory(!showInventory)}
           style={{
@@ -1407,7 +1355,6 @@ Owner Description: ${stats.owner.description}
           {showInventory ? '📦 Hide Inventory' : '📦 Show Inventory'} ({state.inventory.length})
         </button>
         
-        {/* INVENTORY */}
         {showInventory && (
           <div style={{
             background: '#111111',
@@ -1418,7 +1365,7 @@ Owner Description: ${stats.owner.description}
           }}>
             <h3 style={{ margin: '0 0 10px 0', color: '#ffd93d' }}>📦 Inventory</h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-              {state.inventory.map((item, index) => {
+              {state.inventory.map((item: string, index: number) => {
                 const isCursed = item.includes('Cursed');
                 const itemDesc = getItemDescription(item);
                 const statBonus = this.itemStats[item] || 0;
@@ -1487,7 +1434,6 @@ Owner Description: ${stats.owner.description}
           </div>
         )}
         
-        {/* DEBUG BUTTONS */}
         <div style={{
           display: 'flex',
           flexWrap: 'wrap',
@@ -1580,7 +1526,6 @@ Owner Description: ${stats.owner.description}
           >🔓 Unlock Cursed Removal</button>
         </div>
         
-        {/* ADULT CONTENT NOTE */}
         <div style={{
           marginTop: '10px',
           padding: '10px',
@@ -1594,7 +1539,6 @@ Owner Description: ${stats.owner.description}
           🔞 Adult-oriented zombie RPG - Contains mature themes 🤡 All equipment is clown/circus themed
         </div>
         
-        {/* MESSAGE DISPLAY */}
         {message && (
           <div style={{
             background: '#1a1a1a',
