@@ -814,14 +814,110 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
 
   async afterResponse(botMessage: Message): Promise<Partial<StageResponse<ChatStateType, MessageStateType>>> {
     const content = botMessage.content.toLowerCase();
-    if (content.includes('curse lifted') || content.includes('cursed removed') || content.includes('rotten arm removed')) this.unlockCursedRemoval();
+    
+    // ============================================
+    // CURSED REMOVAL
+    // ============================================
+    if (content.includes('curse lifted') || content.includes('cursed removed') || content.includes('rotten arm removed')) {
+      this.unlockCursedRemoval();
+    }
+    
+    // ============================================
+    // OWNER UPDATES
+    // ============================================
     if (content.includes('owner:') || content.includes('master:')) {
       for (const line of content.split('\n')) {
-        if (line.includes('owner:') || line.includes('master:')) this.myInternalState.owner.name = line.split(':')[1]?.trim() || this.myInternalState.owner.name;
-        if (line.includes('mood:')) this.myInternalState.owner.mood = line.split(':')[1]?.trim() || this.myInternalState.owner.mood;
+        if (line.includes('owner:') || line.includes('master:')) {
+          this.myInternalState.owner.name = line.split(':')[1]?.trim() || this.myInternalState.owner.name;
+        }
+        if (line.includes('mood:')) {
+          this.myInternalState.owner.mood = line.split(':')[1]?.trim() || this.myInternalState.owner.mood;
+        }
       }
     }
-    return { stageDirections: null, messageState: this.myInternalState, modifiedMessage: null, error: null, systemMessage: null, chatState: null };
+    
+    // ============================================
+    // 👇 NEW: DAMAGE DETECTION
+    // ============================================
+    // Matches: "takes 5 damage", "5 damage", "damage 10"
+    const damageMatch = content.match(/(\d+)\s*(damage|dmg)/);
+    if (damageMatch) {
+      const damage = Math.min(parseInt(damageMatch[1]), 20); // Cap at 20 damage
+      this.takeDamage(damage);
+    }
+    
+    // ============================================
+    // 👇 NEW: HEALING DETECTION
+    // ============================================
+    // Matches: "heals 20", "heal 15", "restore 10 HP"
+    const healMatch = content.match(/heal[s]?\s+(\d+)/);
+    if (healMatch) {
+      const healAmount = Math.min(parseInt(healMatch[1]), 30); // Cap at 30 heal
+      this.myInternalState.health = Math.min(
+        this.myInternalState.health + healAmount,
+        this.myInternalState.maxHealth
+      );
+    }
+    
+    // ============================================
+    // 👇 NEW: GOLD DETECTION
+    // ============================================
+    // Matches: "found 15 gold", "gains 10 gold", "+10 gold"
+    const goldMatch = content.match(/(\d+)\s*gold/);
+    if (goldMatch) {
+      this.addGold(parseInt(goldMatch[1]));
+    }
+    
+    // ============================================
+    // 👇 NEW: EXP DETECTION
+    // ============================================
+    // Matches: "gains 15 exp", "+10 experience", "exp 20"
+    const expMatch = content.match(/(\d+)\s*(exp|experience)/);
+    if (expMatch) {
+      this.addExp(parseInt(expMatch[1]));
+    }
+    
+    // ============================================
+    // 👇 NEW: STAMINA RESTORE
+    // ============================================
+    // Matches: "restore 10 stamina", "stamina +5"
+    const staminaMatch = content.match(/stamina\s*[+]\s*(\d+)/);
+    if (staminaMatch) {
+      const restoreAmount = Math.min(parseInt(staminaMatch[1]), 15);
+      this.myInternalState.stamina = Math.min(
+        this.myInternalState.stamina + restoreAmount,
+        this.myInternalState.maxStamina
+      );
+    }
+    
+    // ============================================
+    // 👇 NEW: ITEM DETECTION
+    // ============================================
+    // Matches: "found a sword", "found shield", "found potion"
+    const itemKeywords = ['sword', 'shield', 'ring', 'dagger', 'armor', 'potion', 'helmet', 'cloak', 'amulet', 'staff'];
+    for (const keyword of itemKeywords) {
+      if (content.includes(keyword)) {
+        // Check if it says "found" or "gets" or "receives"
+        if (content.includes('found') || content.includes('gets') || content.includes('receives')) {
+          const itemName = keyword.charAt(0).toUpperCase() + keyword.slice(1);
+          this.addItem(itemName);
+          // Give it a stat bonus if it's equipment
+          if (!this.itemStats[itemName]) {
+            this.itemStats[itemName] = 2 + Math.floor(Math.random() * 3);
+          }
+          break; // Only add one item per message
+        }
+      }
+    }
+    
+    return { 
+      stageDirections: null, 
+      messageState: this.myInternalState, 
+      modifiedMessage: null, 
+      error: null, 
+      systemMessage: null, 
+      chatState: null 
+    };
   }
 
   render(): ReactElement {
