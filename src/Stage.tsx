@@ -614,7 +614,7 @@ Owner Description: ${stats.owner.description}
     const state = this.myInternalState;
     
     const updateUI = () => {
-      this.setState(this.myInternalState);
+      this.setState(this.myInternalState as MessageStateType);
       forceUpdate(prev => prev + 1);
     };
     
