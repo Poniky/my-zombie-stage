@@ -501,10 +501,17 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
     this.generateShopItems();
   }
 
+  // async load(): Promise<Partial<LoadResponse<InitStateType, ChatStateType, MessageStateType>>> {
+  //   return { success: true, error: null, initState: null, chatState: null };
+  // }
   async load(): Promise<Partial<LoadResponse<InitStateType, ChatStateType, MessageStateType>>> {
-    return { success: true, error: null, initState: null, chatState: null };
-  }
-
+    return {
+      success: true,
+      error: null,
+      initState: null,
+      chatState: null,
+    };
+}
   async setState(state: MessageStateType): Promise<void> {
     if (state != null) this.myInternalState = { ...this.myInternalState, ...state } as MessageStateType & { [key: string]: any };
   }
