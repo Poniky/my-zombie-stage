@@ -821,7 +821,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
   
   [SYSTEM INSTRUCTIONS - STAT UPDATES]
   To update the zombie's stats, include these phrases in your response:
-  - "takes [number] damage" → reduces HP
+  - "takes [number] damage" → reduces HP 
   - "heals [number] HP" → restores HP
   - "found [number] gold" → adds gold
   - "gains [number] EXP" → adds experience
